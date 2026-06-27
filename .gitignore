@@ -1,0 +1,23 @@
+# 輸出資料（測試用，不納入版控）
+output.json
+showtimes.csv
+
+# Debug 過程產生的臨時檔案
+tmp_*.py
+*.png
+*.html
+skcinemas_api_*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# 環境變數
+.env
+.env.*
+
+# 編輯器
+.vscode/
+.idea/
