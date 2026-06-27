@@ -90,10 +90,11 @@ Transform 層負責將三個爬蟲的異質原始資料，統一正規化為單�
      - `transform.py` `normalize()` 中，若 `is_next_day=True` 則 `show_date + timedelta(days=1)`
    - 影響：各影城跨日場次（00:xx、01:xx 隔日）得以正確記錄，日期對應到隔天
 
-2. **韓語場次 language 為空**（確認非 bug）
-   - 查驗：威秀原始資料的版本字串只有 `英`/`日`/`國`/`中` 四種語言 token，**韓語片完全不標記語言**
-   - 例：`(數位)屍速禁區` 版本字串為 `數位`，無任何語言 token
-   - 結論：`language=""` 對韓語片是正確行為，為資料來源限制，非解析錯誤
+2. **韓語場次 language 為空**（已知缺口，待補）
+   - 查驗：威秀電影介紹頁（`/film/detail.aspx`）「放映版本」欄位有標示 `韓`（e.g. `數位 / 韓`、`GC 數位 / 韓`），但場次 API（`/ShowTimes/GetShowTimes`）回傳的版本字串 **不含語言 token**
+   - 例：介紹頁顯示 `數位 / 韓`，API 回傳 `(數位)屍速禁區`
+   - 現狀：韓語片 `language=""` — 為 API 與介紹頁資料不同步的缺口
+   - TODO：額外爬 `/film/detail.aspx?id={movie_id}` 取語言標記，以 movie_id join 回場次資料，補上 `韓文` 對應
 
 3. **GC → GOLD CLASS**
    - 問題：威秀 Gold Class 廳版本字串為 `GC 數位`，程式只比對 `"GOLD CLASS"` 全名，導致匹配失敗 → 歸類為 `standard`（is_special_hall=False）
