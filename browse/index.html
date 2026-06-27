@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>台灣影城場次瀏覽</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .dropdown-panel { max-height: 280px; overflow-y: auto; }
+    .sticky-header th { position: sticky; top: 0; z-index: 10; }
+    .table-wrap { max-height: calc(100vh - 220px); overflow-y: auto; }
+    .active-filter { background-color: #eff6ff; border-color: #3b82f6; }
+    .filter-badge { display:inline-flex; align-items:center; gap:2px; font-size:10px;
+                    background:#dbeafe; color:#1d4ed8; border-radius:9999px; padding:1px 6px; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div class="max-w-full px-4 py-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl">🎬</span>
+      <div>
+        <h1 class="text-xl font-bold text-gray-800">台灣影城場次瀏覽</h1>
+        <p class="text-xs text-gray-400">威秀・新光・美麗華｜特殊廳場次資料</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <span id="statsText" class="text-xs text-gray-400"></span>
+      <button onclick="clearAllFilters()" class="text-xs text-blue-600 hover:text-blue-800 border border-blue-200 hover:border-blue-400 px-3 py-1.5 rounded-lg transition-colors">清除篩選</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading" class="flex items-center justify-center py-24 gap-3 text-gray-400">
+    <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+    </svg>
+    <span class="text-sm">載入場次資料中...</span>
+  </div>
+
+  <!-- Table container -->
+  <div id="tableWrap" class="hidden bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="table-wrap">
+      <table class="w-full text-sm text-left border-collapse">
+        <thead id="thead" class="sticky-header"></thead>
+        <tbody id="tbody" class="divide-y divide-gray-100 text-gray-700"></tbody>
+      </table>
+      <div id="emptyState" class="hidden py-16 text-center text-gray-400 text-sm">查無符合條件的場次</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Dropdown overlay (shared, portal-style) -->
+<div id="dropdownPortal" class="hidden fixed z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-64 p-2" style="min-width:220px">
+  <input id="dropdownSearch" type="text" placeholder="搜尋..." class="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-blue-400" oninput="filterDropdownOptions(this.value)" />
+  <div class="flex gap-2 mb-2">
+    <button onclick="selectAllVisible()" class="text-xs text-blue-600 hover:underline">全選</button>
+    <span class="text-gray-300">|</span>
+    <button onclick="clearDropdown()" class="text-xs text-gray-500 hover:underline">清除</button>
+  </div>
+  <div id="dropdownOptions" class="dropdown-panel space-y-1"></div>
+  <div class="border-t border-gray-100 mt-2 pt-2 flex justify-end gap-2">
+    <button onclick="closeDropdown()" class="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg border border-gray-200">取消</button>
+    <button onclick="applyDropdown()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg">確定</button>
+  </div>
+</div>
+<div id="dropdownBackdrop" class="hidden fixed inset-0 z-40" onclick="closeDropdown()"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────
+let ALL_ROWS = [];
+let COLUMNS = [];
+const COL_LABELS = {
+  show_date:'日期', movie_name:'電影', theater_name:'影城', chain:'院線',
+  hall_type:'廳型', hall_name:'廳名', show_time:'時間', language:'語言',
+  is_special_hall:'特殊廳', last_updated:'資料更新'
+};
+const DISPLAY_COLS = ['show_date','movie_name','theater_name','chain','hall_type','hall_name','show_time','language','is_special_hall'];
+const DROPDOWN_COLS = new Set(['chain','hall_type','language','is_special_hall']);
+const HALL_COLORS = {
+  'IMAX':'bg-purple-100 text-purple-700','4DX':'bg-orange-100 text-orange-700',
+  'MX4D':'bg-orange-100 text-orange-700','Dolby':'bg-indigo-100 text-indigo-700',
+  'GOLD CLASS':'bg-yellow-100 text-yellow-700','TITAN':'bg-teal-100 text-teal-700',
+  'MUCROWN':'bg-teal-100 text-teal-700','LUXE':'bg-pink-100 text-pink-700',
+  'OSIM':'bg-green-100 text-green-700','SEALY':'bg-green-100 text-green-700',
+};
+const CHAIN_COLORS = {'威秀':'text-blue-700 font-medium','新光':'text-rose-600 font-medium','美麗華':'text-emerald-600 font-medium'};
+
+// ── Filters ───────────────────────────────────────────────────────────────
+const textFilters = {};    // col → string
+const dropFilters = {};    // col → Set of selected values (null = all)
+
+function colIdx(col) { return COLUMNS.indexOf(col); }
+
+function rowMatches(row) {
+  for (const col of DISPLAY_COLS) {
+    const idx = colIdx(col);
+    if (idx === -1) continue;
+    const val = row[idx];
+    const str = val === null || val === undefined ? '' : String(val);
+
+    if (DROPDOWN_COLS.has(col)) {
+      const sel = dropFilters[col];
+      if (sel && sel.size > 0 && !sel.has(str)) return false;
+    } else {
+      const q = (textFilters[col] || '').toLowerCase();
+      if (q && !str.toLowerCase().includes(q)) return false;
+    }
+  }
+  return true;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function renderTable() {
+  const filtered = ALL_ROWS.filter(rowMatches);
+  const total = ALL_ROWS.length;
+  const lastUpd = ALL_ROWS.length ? ALL_ROWS[0][colIdx('last_updated')] : '';
+  document.getElementById('statsText').textContent =
+    `共 ${total.toLocaleString()} 筆｜篩選後 ${filtered.length.toLocaleString()} 筆｜更新 ${lastUpd}`;
+
+  const tbody = document.getElementById('tbody');
+  const empty = document.getElementById('emptyState');
+  if (filtered.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+
+  tbody.innerHTML = filtered.map(row =>
+    '<tr class="hover:bg-gray-50 transition-colors">' +
+    DISPLAY_COLS.map(col => {
+      const idx = colIdx(col);
+      const val = idx >= 0 ? row[idx] : null;
+      return `<td class="px-3 py-2 whitespace-nowrap">${renderCell(col, val)}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+}
+
+function renderCell(col, val) {
+  if (val === null || val === undefined || val === '') return '<span class="text-gray-300">—</span>';
+  const s = String(val);
+  if (col === 'hall_type' && HALL_COLORS[s])
+    return `<span class="inline-block text-xs font-medium px-2 py-0.5 rounded-full ${HALL_COLORS[s]}">${esc(s)}</span>`;
+  if (col === 'is_special_hall')
+    return val === true || val === 'true' ? '<span class="text-green-600 font-medium">✓</span>' : '<span class="text-gray-300">—</span>';
+  if (col === 'chain' && CHAIN_COLORS[s])
+    return `<span class="${CHAIN_COLORS[s]}">${esc(s)}</span>`;
+  return esc(s);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Header with filter controls ───────────────────────────────────────────
+function buildHeader() {
+  const thead = document.getElementById('thead');
+  thead.innerHTML = `<tr class="bg-gray-50 text-xs text-gray-500 border-b border-gray-100">` +
+    DISPLAY_COLS.map(col => {
+      if (DROPDOWN_COLS.has(col)) {
+        return `<th class="px-3 py-0 font-medium">
+          <div class="py-2">${esc(COL_LABELS[col]||col)}</div>
+          <div class="pb-2">
+            <button id="ddBtn_${col}" onclick="openDropdown('${col}', this)"
+              class="flex items-center gap-1 text-xs border border-gray-200 rounded-lg px-2 py-1 hover:border-blue-300 hover:bg-blue-50 transition-colors w-full">
+              <span id="ddLabel_${col}" class="truncate text-gray-400">全部</span>
+              <svg class="ml-auto h-3 w-3 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+          </div>
+        </th>`;
+      } else {
+        return `<th class="px-3 py-0 font-medium">
+          <div class="py-2">${esc(COL_LABELS[col]||col)}</div>
+          <div class="pb-2">
+            <input type="text" placeholder="篩選…"
+              class="w-full min-w-[80px] border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+              oninput="onTextFilter('${col}', this.value)"
+              id="txtFilter_${col}" />
+          </div>
+        </th>`;
+      }
+    }).join('') +
+  `</tr>`;
+}
+
+function onTextFilter(col, val) {
+  textFilters[col] = val;
+  renderTable();
+}
+
+// ── Dropdown logic ────────────────────────────────────────────────────────
+let activeDropCol = null;
+let pendingSelection = null;
+
+function getUniqueVals(col) {
+  const idx = colIdx(col);
+  const vals = new Set();
+  for (const row of ALL_ROWS) {
+    const v = row[idx];
+    vals.add(v === null || v === undefined ? '' : String(v));
+  }
+  return [...vals].sort((a,b) => {
+    if (col === 'is_special_hall') return b.localeCompare(a);
+    return a.localeCompare(b, 'zh-TW');
+  });
+}
+
+function openDropdown(col, btn) {
+  activeDropCol = col;
+  pendingSelection = new Set(dropFilters[col] || []);
+
+  const vals = getUniqueVals(col);
+  renderDropdownOptions(vals, '');
+
+  document.getElementById('dropdownSearch').value = '';
+  document.getElementById('dropdownSearch')._allVals = vals;
+
+  // Position the dropdown under the button
+  const portal = document.getElementById('dropdownPortal');
+  const rect = btn.getBoundingClientRect();
+  portal.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  portal.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 240) + 'px';
+  portal.classList.remove('hidden');
+  document.getElementById('dropdownBackdrop').classList.remove('hidden');
+}
+
+function renderDropdownOptions(vals, query) {
+  const container = document.getElementById('dropdownOptions');
+  const q = query.toLowerCase();
+  const filtered = q ? vals.filter(v => v.toLowerCase().includes(q)) : vals;
+
+  container.innerHTML = filtered.map(v => {
+    const label = v === '' ? '（空白）' : (v === 'true' ? '特殊廳 ✓' : v === 'false' ? '一般廳' : v);
+    const checked = pendingSelection.size === 0 || pendingSelection.has(v);
+    return `<label class="flex items-center gap-2 px-1 py-1 rounded hover:bg-gray-50 cursor-pointer text-xs text-gray-700">
+      <input type="checkbox" value="${esc(v)}" ${checked?'checked':''} class="dd-cb rounded"
+        onchange="onCbChange(this)"/>
+      ${renderCell(activeDropCol, v === 'true' ? true : v === 'false' ? false : (v||null))}
+    </label>`;
+  }).join('');
+}
+
+function onCbChange(cb) {
+  if (pendingSelection.size === 0) {
+    // was "all selected" state — switch to explicit selection
+    const allVals = document.getElementById('dropdownSearch')._allVals || [];
+    pendingSelection = new Set(allVals);
+  }
+  if (cb.checked) pendingSelection.add(cb.value);
+  else pendingSelection.delete(cb.value);
+}
+
+function filterDropdownOptions(q) {
+  const vals = document.getElementById('dropdownSearch')._allVals || [];
+  renderDropdownOptions(vals, q);
+}
+
+function selectAllVisible() {
+  document.querySelectorAll('.dd-cb').forEach(cb => { cb.checked = true; pendingSelection.add(cb.value); });
+}
+
+function clearDropdown() {
+  pendingSelection = new Set();
+  document.querySelectorAll('.dd-cb').forEach(cb => cb.checked = false);
+}
+
+function applyDropdown() {
+  const col = activeDropCol;
+  const allVals = getUniqueVals(col);
+  // If all selected or none selected → treat as "no filter"
+  if (pendingSelection.size === 0 || pendingSelection.size >= allVals.length) {
+    delete dropFilters[col];
+  } else {
+    dropFilters[col] = new Set(pendingSelection);
+  }
+  updateDropdownLabel(col);
+  closeDropdown();
+  renderTable();
+}
+
+function updateDropdownLabel(col) {
+  const sel = dropFilters[col];
+  const btn = document.getElementById(`ddLabel_${col}`);
+  if (!btn) return;
+  if (!sel || sel.size === 0) {
+    btn.textContent = '全部';
+    btn.className = 'truncate text-gray-400';
+    document.getElementById(`ddBtn_${col}`).classList.remove('active-filter');
+  } else {
+    btn.textContent = sel.size === 1 ? [...sel][0] || '（空白）' : `已選 ${sel.size} 項`;
+    btn.className = 'truncate text-blue-700 font-medium';
+    document.getElementById(`ddBtn_${col}`).classList.add('active-filter');
+  }
+}
+
+function closeDropdown() {
+  document.getElementById('dropdownPortal').classList.add('hidden');
+  document.getElementById('dropdownBackdrop').classList.add('hidden');
+  activeDropCol = null;
+  pendingSelection = null;
+}
+
+// ── Clear all ─────────────────────────────────────────────────────────────
+function clearAllFilters() {
+  for (const col of DISPLAY_COLS) {
+    delete textFilters[col];
+    delete dropFilters[col];
+    const txt = document.getElementById(`txtFilter_${col}`);
+    if (txt) txt.value = '';
+    updateDropdownLabel(col);
+  }
+  renderTable();
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res = await fetch('/api/data');
+    const data = await res.json();
+    COLUMNS = data.columns;
+    ALL_ROWS = data.rows;
+
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('tableWrap').classList.remove('hidden');
+    buildHeader();
+    renderTable();
+  } catch (err) {
+    document.getElementById('loading').innerHTML =
+      `<span class="text-red-500 text-sm">載入失敗：${err.message}</span>`;
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>
