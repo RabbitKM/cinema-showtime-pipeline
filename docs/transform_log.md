@@ -83,33 +83,33 @@ Transform 層負責將三個爬蟲的異質原始資料，統一正規化為單�
 
 **修正項目：**
 
-1. **跨日場次（隔日）遺失**
-   - 問題：威秀部分影廳有凌晨跨日場次，時間格式為 `00:45(隔日)`，transform 的 `^\d{2}:\d{2}$` regex 完全過濾這些場次
-   - 修正：
-     - `_parse_showtimes_html()` 改用 `^(\d{2}:\d{2})(\(隔日\))?$` 比對，提取時間部分並記錄 `is_next_day: True`
-     - `transform.py` `normalize()` 中，若 `is_next_day=True` 則 `show_date + timedelta(days=1)`
-   - 影響：各影城跨日場次（00:xx、01:xx 隔日）得以正確記錄，日期對應到隔天
+1. **GC → GOLD CLASS**
+   - 問題：威秀 Gold Class 廳版本字串為 `GC 數位`，程式只比對 `"GOLD CLASS"` 全名，導致匹配失敗 → 歸類為 `standard`（is_special_hall=False）
+   - 修正：在 `_HALL_MAP` 加入 `("GC", "GOLD CLASS")` 別名，置於 `GOLD CLASS` 之後（避免 `GC` 誤觸 `GOLD CLASS` 字串）
+   - 影響：253 筆 GOLD CLASS 場次從 `standard` 正確改為 `GOLD CLASS`
 
-2. **韓語場次 language 為空**（已知缺口，待補）
+2. **`hall_name` 保留版本字串**
+   - 問題：`hall_name` 未填，前端看不出 `IMAX` vs `IMAX 3D`、`GC 數位` vs 一般 `數位`
+   - 修正：`_parse_version()` 新增第 4 個回傳值；`hall_name` = 版本字串去掉語言 token（按空格分割後過濾 `{英,中,日,國}`）
+   - 範例：`"4DX 3D 英"` → hall_type=`4DX`、hall_name=`4DX 3D`
+
+3. **「國」語對應中文**
+   - 問題：威秀版本字串用 `國`（國語）表示中文場，語言對照表只有 `英/中/日`，`國` 未對應 → `language = ""`
+   - 修正：加入 `("國", "中文")` 對應
+   - 影響：約 1,900+ 筆威秀中文場次 language 從空白正確填入 `"中文"`
+
+4. **韓語場次 language 為空**（已知缺口，待補）
    - 查驗：威秀電影介紹頁（`/film/detail.aspx`）「放映版本」欄位有標示 `韓`（e.g. `數位 / 韓`、`GC 數位 / 韓`），但場次 API（`/ShowTimes/GetShowTimes`）回傳的版本字串 **不含語言 token**
    - 例：介紹頁顯示 `數位 / 韓`，API 回傳 `(數位)屍速禁區`
    - 現狀：韓語片 `language=""` — 為 API 與介紹頁資料不同步的缺口
    - TODO：額外爬 `/film/detail.aspx?id={movie_id}` 取語言標記，以 movie_id join 回場次資料，補上 `韓文` 對應
 
-3. **GC → GOLD CLASS**
-   - 問題：威秀 Gold Class 廳版本字串為 `GC 數位`，程式只比對 `"GOLD CLASS"` 全名，導致匹配失敗 → 歸類為 `standard`（is_special_hall=False）
-   - 修正：在 `_HALL_MAP` 加入 `("GC", "GOLD CLASS")` 別名，置於 `GOLD CLASS` 之後（避免 `GC` 誤觸 `GOLD CLASS` 字串）
-   - 影響：253 筆 GOLD CLASS 場次從 `standard` 正確改為 `GOLD CLASS`
-
-4. **「國」語對應中文**
-   - 問題：威秀版本字串用 `國`（國語）表示中文場，語言對照表只有 `英/中/日`，`國` 未對應 → `language = ""`
-   - 修正：加入 `("國", "中文")` 對應
-   - 影響：約 1,900+ 筆威秀中文場次 language 從空白正確填入 `"中文"`
-
-5. **`hall_name` 保留版本字串**
-   - 問題：`hall_name` 未填，前端看不出 `IMAX` vs `IMAX 3D`、`GC 數位` vs 一般 `數位`
-   - 修正：`_parse_version()` 新增第 4 個回傳值；`hall_name` = 版本字串去掉語言 token（按空格分割後過濾 `{英,中,日,國}`）
-   - 範例：`"4DX 3D 英"` → hall_type=`4DX`、hall_name=`4DX 3D`
+5. **跨日場次（隔日）遺失**
+   - 問題：威秀部分影廳有凌晨跨日場次，時間格式為 `00:45(隔日)`，transform 的 `^\d{2}:\d{2}$` regex 完全過濾這些場次
+   - 修正：
+     - `_parse_showtimes_html()` 改用 `^(\d{2}:\d{2})(\(隔日\))?$` 比對，提取時間部分並記錄 `is_next_day: True`
+     - `transform.py` `normalize()` 中，若 `is_next_day=True` 則 `show_date + timedelta(days=1)`
+   - 影響：各影城跨日場次（00:xx、01:xx 隔日）得以正確記錄，日期對應到隔天
 
 ---
 
