@@ -105,17 +105,17 @@ Transform 層負責將三個爬蟲的異質原始資料，統一正規化為單�
    - 現狀：韓語片 `language=""` — 為 API 與介紹頁資料不同步的缺口
    - TODO：額外爬 `/film/detail.aspx?id={movie_id}` 取語言標記，以 movie_id join 回場次資料，補上 `韓文` 對應
 
-6. **ATMOS 未對應 Dolby**
-   - 問題：威秀部分場次版本字串為 `ATMOS`（無 "DOLBY" 前綴），`_HALL_MAP` 只有 `"DOLBY ATMOS"` 條件，導致匹配失敗 → `standard`
-   - 修正：`_HALL_MAP` 加入 `("ATMOS", "Dolby")`，置於 `DOLBY ATMOS` 之後；`transform._normalize_hall_type` 亦補充 `"ATMOS" in r` 條件
-   - 影響：69 筆 ATMOS 場次從 `standard` 正確改為 `Dolby`（is_special_hall=True）
-
 5. **跨日場次（隔日）遺失**
    - 問題：威秀部分影廳有凌晨跨日場次，時間格式為 `00:45(隔日)`，transform 的 `^\d{2}:\d{2}$` regex 完全過濾這些場次
    - 修正：
      - `_parse_showtimes_html()` 改用 `^(\d{2}:\d{2})(\(隔日\))?$` 比對，提取時間部分並記錄 `is_next_day: True`
      - `transform.py` `normalize()` 中，若 `is_next_day=True` 則 `show_date + timedelta(days=1)`
    - 影響：各影城跨日場次（00:xx、01:xx 隔日）得以正確記錄，日期對應到隔天
+
+6. **ATMOS 未對應 Dolby**
+   - 問題：威秀部分場次版本字串為 `ATMOS`（無 "DOLBY" 前綴），`_HALL_MAP` 只有 `"DOLBY ATMOS"` 條件，導致匹配失敗 → `standard`
+   - 修正：`_HALL_MAP` 加入 `("ATMOS", "Dolby")`，置於 `DOLBY ATMOS` 之後；`transform._normalize_hall_type` 亦補充 `"ATMOS" in r` 條件
+   - 影響：69 筆 ATMOS 場次從 `standard` 正確改為 `Dolby`（is_special_hall=True）
 
 ---
 
