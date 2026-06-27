@@ -12,6 +12,7 @@ _dev/
 tmp_*.py
 *.png
 *.html
+!api/index.html
 skcinemas_api_*.json
 
 # Python

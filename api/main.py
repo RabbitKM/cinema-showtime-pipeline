@@ -25,7 +25,8 @@ from sentence_transformers import SentenceTransformer
 
 from templates import SQL_TEMPLATES
 
-load_dotenv()
+_api_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(os.path.dirname(_api_dir), ".env"))  # cinema_check/.env
 
 embed_model: SentenceTransformer = None
 template_embeddings: np.ndarray = None
@@ -55,10 +56,12 @@ async def lifespan(app: FastAPI):
         http_options={"api_version": "v1alpha"},
     )
 
-    sa_path = os.path.join(
-        os.path.dirname(__file__),
-        os.getenv("GCP_SERVICE_ACCOUNT_PATH", "service_account.json"),
-    )
+    sa_rel = os.getenv("GCP_SERVICE_ACCOUNT_PATH", "service_account.json")
+    # 先找 api/ 同層，再往上找 cinema_check/
+    api_dir = os.path.dirname(os.path.abspath(__file__))
+    sa_path = os.path.join(api_dir, sa_rel)
+    if not os.path.exists(sa_path):
+        sa_path = os.path.join(os.path.dirname(api_dir), sa_rel)
     if os.path.exists(sa_path):
         credentials = service_account.Credentials.from_service_account_file(
             sa_path, scopes=["https://www.googleapis.com/auth/cloud-platform"]
