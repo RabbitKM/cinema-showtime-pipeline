@@ -17,7 +17,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 安裝 Playwright Chromium（miramar/skcinemas 使用）
-RUN playwright install --with-deps chromium
+RUN playwright install chromium
 
 COPY . .
 
