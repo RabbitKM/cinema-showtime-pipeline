@@ -68,7 +68,7 @@ def _normalize_hall_type(raw: str) -> str:
     if not raw:
         return "standard"
     r = raw.upper()
-    if "DOLBY" in r:
+    if "DOLBY" in r or "ATMOS" in r:
         return "Dolby"
     if "IMAX" in r:
         return "IMAX"

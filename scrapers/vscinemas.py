@@ -24,6 +24,7 @@ _HALL_MAP = (
     ("TITAN",       "TITAN"),
     ("MUCROWN",     "MUCROWN"),
     ("DOLBY ATMOS", "Dolby"),
+    ("ATMOS",       "Dolby"),
     ("LUXE",        "LUXE"),
     ("OSIM",        "OSIM"),
 )

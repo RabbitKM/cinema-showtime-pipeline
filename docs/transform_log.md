@@ -41,6 +41,7 @@ Transform 層負責將三個爬蟲的異質原始資料，統一正規化為單�
 | Dolby Atmos | `Dolby` | True |
 | LUXE | `LUXE` | True |
 | OSIM | `OSIM` | True |
+| **SEALY**（新光 B.O.X. Sealy） | `SEALY` | True |
 | 其他（數位、3D 數位、A+、標準廳…） | `standard` | False |
 
 ---
@@ -104,6 +105,11 @@ Transform 層負責將三個爬蟲的異質原始資料，統一正規化為單�
    - 現狀：韓語片 `language=""` — 為 API 與介紹頁資料不同步的缺口
    - TODO：額外爬 `/film/detail.aspx?id={movie_id}` 取語言標記，以 movie_id join 回場次資料，補上 `韓文` 對應
 
+6. **ATMOS 未對應 Dolby**
+   - 問題：威秀部分場次版本字串為 `ATMOS`（無 "DOLBY" 前綴），`_HALL_MAP` 只有 `"DOLBY ATMOS"` 條件，導致匹配失敗 → `standard`
+   - 修正：`_HALL_MAP` 加入 `("ATMOS", "Dolby")`，置於 `DOLBY ATMOS` 之後；`transform._normalize_hall_type` 亦補充 `"ATMOS" in r` 條件
+   - 影響：69 筆 ATMOS 場次從 `standard` 正確改為 `Dolby`（is_special_hall=True）
+
 5. **跨日場次（隔日）遺失**
    - 問題：威秀部分影廳有凌晨跨日場次，時間格式為 `00:45(隔日)`，transform 的 `^\d{2}:\d{2}$` regex 完全過濾這些場次
    - 修正：
@@ -143,6 +149,29 @@ Transform 層負責將三個爬蟲的異質原始資料，統一正規化為單�
 - 新光有 5 間影城，電影詳情頁有 Dropdown（`.Dropdown-control`）切換
 - 爬蟲點擊 Dropdown 依序切換至 5 間影城，每次觸發 `GetSessionByCinemasIDForApp` API
 - 關鍵：以 `_CINEMA_KEYWORD`（獅子林/天母/青埔/中港/西門）比對 Dropdown 選項文字，避免點錯已收集的影城
+
+**資料品質修正：**
+
+1. **國語版 → 中文**
+   - 問題：新光 `FilmType` 用 `國語版` 表示中文場，語言判斷只有 `英/日/中`，`國語版` 無「中」字 → `language=""`
+   - 修正：加入 `"國" in ft` 條件 → `"中文"`
+   - 影響：國語場次正確填入 `language="中文"`
+
+2. **hall_name 改存 FilmType（原為 ScreenName）**
+   - 問題：`hall_name` 原存 ScreenName（`1廳`、`2廳` 等廳號），遺失 FilmType 中的 `特別場`、`3D`、`B.O.X.` 等場次版本細節
+   - 修正：`hall_name = s["film_type"]`（如 `B.O.X. Osim`、`MX4D-3D`、`特別場DolbyCinema`）
+   - 影響：hall_name 語義與威秀一致，保留完整版本資訊
+
+3. **SEALY 廳型新增**
+   - 問題：新光 B.O.X. Sealy 廳（FilmType=`B.O.X. Sealy`）經 `transform._normalize_hall_type` 落回 `standard`，`is_special_hall=False`
+   - 修正：`transform._normalize_hall_type` 加入 `"SEALY" → "SEALY"`；`SPECIAL_HALL_TYPES` 加入 `"SEALY"`
+   - 影響：17 筆 Sealy 場次 `is_special_hall` 從 False → True
+
+**已知缺口（不加欄位，記錄設計決策）：**
+
+- **廳號（ScreenName）未保留**：新光 API 有 `ScreenName`（`1廳`、`2廳`…）代表實體廳編號。修正後 `hall_name` 改存 FilmType，ScreenName 未另存欄位。
+  - 原因：威秀、美麗華皆無廳號概念，加欄位會造成跨院線空值；廳號對廳型/語言分析幫助有限
+  - 若未來有需求，可在爬蟲加回 `screen_name` raw 欄位（API 直接提供，不需額外爬取）
 
 ---
 
