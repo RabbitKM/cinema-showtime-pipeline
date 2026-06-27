@@ -1,0 +1,13 @@
+.env
+.env.*
+service_account.json
+output.json
+showtimes.csv
+_dev/
+.git/
+.gitignore
+.playwright-mcp/
+__pycache__/
+*.py[cod]
+*.png
+*.html
