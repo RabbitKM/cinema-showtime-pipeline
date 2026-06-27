@@ -15,7 +15,7 @@ fact_showtimes 欄位:
   scraped_at      STRING      ISO 8601 UTC
 """
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 SPECIAL_HALL_TYPES = {"IMAX", "4DX", "MX4D", "Dolby", "GOLD CLASS", "TITAN", "MUCROWN", "LUXE", "OSIM"}
 
@@ -120,6 +120,9 @@ def normalize(records: list[dict]) -> list[dict]:
         show_time = rec.get("show_time", "").strip()
         if not re.match(r"^\d{2}:\d{2}$", show_time):
             continue  # 跳過無效時間
+
+        if rec.get("is_next_day"):
+            show_date = (date.fromisoformat(show_date) + timedelta(days=1)).isoformat()
 
         raw_hall = rec.get("hall_type", "") or rec.get("hall_name", "")
         hall_type = _normalize_hall_type(raw_hall)

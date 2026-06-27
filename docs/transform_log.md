@@ -77,13 +77,25 @@ Transform 層負責將三個爬蟲的異質原始資料，統一正規化為單�
 
 ## 各爬蟲 Transform 相關修正紀錄
 
-### 威秀（vscinemas）— `scrapers/vscinemas.py` `_parse_version()`
+### 威秀（vscinemas）— `scrapers/vscinemas.py` `_parse_showtimes_html()` / `_parse_version()`
 
 版本字串格式：`(HALL_TYPE [3D] LANG)電影名`，e.g. `(4DX 3D 英)海洋奇緣`
 
 **修正項目：**
 
-1. **GC → GOLD CLASS**
+1. **跨日場次（隔日）遺失**
+   - 問題：威秀部分影廳有凌晨跨日場次，時間格式為 `00:45(隔日)`，transform 的 `^\d{2}:\d{2}$` regex 完全過濾這些場次
+   - 修正：
+     - `_parse_showtimes_html()` 改用 `^(\d{2}:\d{2})(\(隔日\))?$` 比對，提取時間部分並記錄 `is_next_day: True`
+     - `transform.py` `normalize()` 中，若 `is_next_day=True` 則 `show_date + timedelta(days=1)`
+   - 影響：各影城跨日場次（00:xx、01:xx 隔日）得以正確記錄，日期對應到隔天
+
+2. **韓語場次 language 為空**（確認非 bug）
+   - 查驗：威秀原始資料的版本字串只有 `英`/`日`/`國`/`中` 四種語言 token，**韓語片完全不標記語言**
+   - 例：`(數位)屍速禁區` 版本字串為 `數位`，無任何語言 token
+   - 結論：`language=""` 對韓語片是正確行為，為資料來源限制，非解析錯誤
+
+3. **GC → GOLD CLASS**
    - 問題：威秀 Gold Class 廳版本字串為 `GC 數位`，程式只比對 `"GOLD CLASS"` 全名，導致匹配失敗 → 歸類為 `standard`（is_special_hall=False）
    - 修正：在 `_HALL_MAP` 加入 `("GC", "GOLD CLASS")` 別名，置於 `GOLD CLASS` 之後（避免 `GC` 誤觸 `GOLD CLASS` 字串）
    - 影響：253 筆 GOLD CLASS 場次從 `standard` 正確改為 `GOLD CLASS`

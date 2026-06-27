@@ -112,7 +112,8 @@ def _parse_showtimes_html(html: str, theater_id: str, theater_name: str) -> list
             elif child.name == "div" and "SessionTimeInfo" in classes:
                 for time_div in child.find_all("div", class_="col-xs-0"):
                     t = time_div.get_text(strip=True)
-                    if re.match(r"^\d{2}:\d{2}$", t):
+                    tm = re.match(r"^(\d{2}:\d{2})(\(隔日\))?$", t)
+                    if tm:
                         results.append({
                             "source": "vscinemas",
                             "chain": CHAIN,
@@ -124,7 +125,8 @@ def _parse_showtimes_html(html: str, theater_id: str, theater_name: str) -> list
                             "hall_name": hall_name,
                             "language": language,
                             "show_date_raw": current_date_raw,
-                            "show_time": t,
+                            "show_time": tm.group(1),
+                            "is_next_day": bool(tm.group(2)),
                             "scraped_at": scraped_at,
                         })
 
