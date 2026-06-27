@@ -2,6 +2,12 @@
 output.json
 showtimes.csv
 
+# 開發/調試暫存資料夾
+_dev/
+
+# Playwright MCP 自動產生的 log/snapshot（每次執行重新產生）
+.playwright-mcp/
+
 # Debug 過程產生的臨時檔案
 tmp_*.py
 *.png
@@ -17,6 +23,9 @@ __pycache__/
 # 環境變數
 .env
 .env.*
+
+# Claude Code / MCP 設定（含 API key）
+.mcp.json
 
 # 編輯器
 .vscode/
