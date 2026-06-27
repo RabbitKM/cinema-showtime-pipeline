@@ -118,13 +118,13 @@ def _normalize(collected: dict[str, list[dict]]) -> list[dict]:
         for s in sessions:
             hall_type = _detect_hall_type(s["screen_name"], s["film_type"])
 
-            # 語言判斷
+            # 語言判斷（國語版 = 國語 = 中文）
             ft = s["film_type"]
             if "英" in ft or "ENG" in ft.upper():
                 language = "英文"
             elif "日" in ft or "JPN" in ft.upper():
                 language = "日文"
-            elif "中" in ft or "CHI" in ft.upper():
+            elif "中" in ft or "國" in ft or "CHI" in ft.upper():
                 language = "中文"
             else:
                 language = ""
@@ -136,7 +136,7 @@ def _normalize(collected: dict[str, list[dict]]) -> list[dict]:
                 "theater_name": theater_name,
                 "movie_name": s["film_name"],
                 "hall_type": hall_type,
-                "hall_name": s["screen_name"],
+                "hall_name": s["film_type"],   # FilmType 含廳型/3D/特別場等細節
                 "language": language,
                 "show_date_raw": s["show_date"],   # "YYYY/MM/DD"
                 "show_time": s["show_time"],       # "HH:MM"

@@ -17,7 +17,7 @@ fact_showtimes 欄位:
 import re
 from datetime import date, datetime, timedelta
 
-SPECIAL_HALL_TYPES = {"IMAX", "4DX", "MX4D", "Dolby", "GOLD CLASS", "TITAN", "MUCROWN", "LUXE", "OSIM"}
+SPECIAL_HALL_TYPES = {"IMAX", "4DX", "MX4D", "Dolby", "GOLD CLASS", "TITAN", "MUCROWN", "LUXE", "OSIM", "SEALY"}
 
 
 def _parse_date(raw: str, year_hint: int | None = None) -> str | None:
@@ -86,6 +86,8 @@ def _normalize_hall_type(raw: str) -> str:
         return "LUXE"
     if "OSIM" in r:
         return "OSIM"
+    if "SEALY" in r:
+        return "SEALY"
     if "ACG" in r:
         return "ACG"
     return "standard"
