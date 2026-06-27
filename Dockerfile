@@ -16,9 +16,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 安裝 Playwright Chromium（miramar/skcinemas 使用）
+# 安裝 Playwright Chromium（miramar 使用；skcinemas 封鎖 GCP IP，由本機排程執行）
 RUN playwright install chromium
 
 COPY . .
 
-CMD ["python", "main.py", "--load"]
+# 只跑威秀和美麗華；新光（skcinemas）因封鎖 GCP IP 改由本機 Windows 排程執行
+CMD ["python", "main.py", "--source", "vscinemas", "miramar", "--load"]

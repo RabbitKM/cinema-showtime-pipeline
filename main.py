@@ -76,8 +76,9 @@ def main():
     parser = argparse.ArgumentParser(description="Cinema showtime ETL")
     parser.add_argument(
         "--source",
+        nargs="+",
         choices=list(SCRAPERS.keys()),
-        help="只執行指定影城爬蟲 (預設: 全部)",
+        help="執行指定影城爬蟲，可多選 (預設: 全部)，e.g. --source vscinemas miramar",
     )
     parser.add_argument(
         "--dry-run",
@@ -91,7 +92,7 @@ def main():
     )
     args = parser.parse_args()
 
-    sources = [args.source] if args.source else list(SCRAPERS.keys())
+    sources = args.source if args.source else list(SCRAPERS.keys())
     run(sources, dry_run=args.dry_run, load=args.load)
 
 

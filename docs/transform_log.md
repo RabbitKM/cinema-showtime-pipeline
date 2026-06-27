@@ -175,6 +175,32 @@ Transform 層負責將三個爬蟲的異質原始資料，統一正規化為單�
 
 ---
 
+---
+
+## 待辦與設計決策
+
+### TODO：電影訂票連結（booking_url）
+
+**背景：** AI 查詢介面（`cinema-api`）目前回傳的場次資料無法直接點擊到訂票頁面或電影詳細資訊，使用者需自行前往各院線網站搜尋。
+
+**可行性評估：**
+
+| 院線 | 狀態 | 說明 |
+|------|------|------|
+| 美麗華 | ✅ 資料已存在 | `scrapers/miramar.py` 已從 DOM 提取 `movieId`、`sessionId`、booking `href`（格式：`/Booking/TicketType?id={movieId}&session={sessionId}`），目前僅用於輔助提取，未存入 schema |
+| 威秀 | 🔍 待研究 | 電影詳細頁為 `/film/detail.aspx?Cid=XXX`，需研究場次 API 是否含電影 ID |
+| 新光 | ✅ API 有資料 | `GetSessionByCinemasIDForApp` 回傳 `SessionID`、`FilmNameID`，需研究官網訂票 URL 格式 |
+
+**實作方向：**
+1. `schema` 新增 `booking_url STRING NULLABLE` 欄位
+2. 美麗華：scraper 直接回傳 `https://www.miramarcinemas.tw{href}`
+3. 威秀/新光：研究 URL 格式後補上
+4. BigQuery 重新 load（WRITE_TRUNCATE，schema 向後相容）
+5. `cinema-api` `/query` endpoint 的結果加入可點擊連結
+6. `browse.html` 表格加入「訂票」連結欄
+
+---
+
 ## 過濾規則
 
 Transform 過濾掉以下記錄：

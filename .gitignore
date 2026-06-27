@@ -2,6 +2,9 @@
 output.json
 showtimes.csv
 
+# 本機 ETL 執行日誌
+logs/
+
 # 開發/調試暫存資料夾
 _dev/
 
