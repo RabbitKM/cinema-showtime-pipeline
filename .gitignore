@@ -20,12 +20,16 @@ __pycache__/
 *.pyo
 .pytest_cache/
 
-# 環境變數
+# 環境變數（範本 .env.example 除外）
 .env
 .env.*
+!.env.example
 
 # Claude Code / MCP 設定（含 API key）
 .mcp.json
+
+# GCP 服務帳號金鑰
+service_account.json
 
 # 編輯器
 .vscode/

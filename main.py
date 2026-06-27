@@ -4,6 +4,7 @@ ETL 主程式
 
 用法:
   python main.py                  # 全部執行，結果存 output.json
+  python main.py --load           # 全部執行，存 output.json + 上傳 BigQuery
   python main.py --source miramar # 僅跑美麗華
   python main.py --dry-run        # 只印結果，不寫檔
 """
@@ -25,7 +26,7 @@ SCRAPERS = {
 }
 
 
-def run(sources: list[str], dry_run: bool = False):
+def run(sources: list[str], dry_run: bool = False, load: bool = False):
     all_raw = []
     start = datetime.utcnow()
 
@@ -62,6 +63,12 @@ def run(sources: list[str], dry_run: bool = False):
     OUTPUT_FILE.write_text(json.dumps(clean, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n結果已寫入: {OUTPUT_FILE} ({OUTPUT_FILE.stat().st_size // 1024} KB)")
 
+    if load:
+        print("\n=== Load: BigQuery ===")
+        from load import load_to_bigquery
+        count = load_to_bigquery(clean)
+        print(f"  → BigQuery 寫入完成：{count} 筆")
+
     return normalized
 
 
@@ -77,10 +84,15 @@ def main():
         action="store_true",
         help="只列印結果，不寫檔",
     )
+    parser.add_argument(
+        "--load",
+        action="store_true",
+        help="寫入 BigQuery（需設定 BQ_PROJECT_ID / BQ_DATASET_ID）",
+    )
     args = parser.parse_args()
 
     sources = [args.source] if args.source else list(SCRAPERS.keys())
-    run(sources, dry_run=args.dry_run)
+    run(sources, dry_run=args.dry_run, load=args.load)
 
 
 if __name__ == "__main__":
