@@ -134,4 +134,33 @@ WHERE hall_type = 'IMAX'
 ORDER BY show_date, theater_name, show_time
 """,
     },
+    {
+        "id": "evening_special_today",
+        "description": "今天晚上傍晚之後的特殊廳場次，例如 IMAX 4DX Dolby 晚上 深夜 17點後 晚上場次",
+        "sql_template": """
+SELECT show_date, movie_name, theater_name, chain, hall_type, show_time, language
+FROM `{project}.{dataset}.fact_showtimes`
+WHERE show_date = CURRENT_DATE('Asia/Taipei')
+  AND is_special_hall = TRUE
+  AND show_time >= '17:00'
+ORDER BY chain, show_time
+""",
+    },
+    {
+        "id": "multi_hall_movies",
+        "description": "同時有多種特殊廳場次的電影，哪些電影同時有 4DX 和 IMAX，跨廳型的電影",
+        "sql_template": """
+SELECT
+  movie_name,
+  STRING_AGG(DISTINCT hall_type ORDER BY hall_type) AS hall_types,
+  COUNT(DISTINCT hall_type) AS hall_type_count,
+  COUNT(*) AS sessions
+FROM `{project}.{dataset}.fact_showtimes`
+WHERE is_special_hall = TRUE
+  AND show_date BETWEEN CURRENT_DATE('Asia/Taipei') AND DATE_ADD(CURRENT_DATE('Asia/Taipei'), INTERVAL 7 DAY)
+GROUP BY movie_name
+HAVING COUNT(DISTINCT hall_type) >= 2
+ORDER BY hall_type_count DESC, sessions DESC
+""",
+    },
 ]

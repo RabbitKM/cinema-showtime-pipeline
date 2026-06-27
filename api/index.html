@@ -40,6 +40,9 @@
         <button onclick="setQuestion(this)" class="example-chip text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 px-3 py-1.5 rounded-full border border-gray-200 hover:border-blue-200 transition-colors">場次最多的電影排行</button>
         <button onclick="setQuestion(this)" class="example-chip text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 px-3 py-1.5 rounded-full border border-gray-200 hover:border-blue-200 transition-colors">英文版場次有哪些？</button>
         <button onclick="setQuestion(this)" class="example-chip text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 px-3 py-1.5 rounded-full border border-gray-200 hover:border-blue-200 transition-colors">各特殊廳場次分布統計</button>
+        <button onclick="setQuestion(this)" class="example-chip text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 px-3 py-1.5 rounded-full border border-gray-200 hover:border-blue-200 transition-colors">今天晚上台北有什麼特殊影廳的場次？</button>
+        <button onclick="setQuestion(this)" class="example-chip text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 px-3 py-1.5 rounded-full border border-gray-200 hover:border-blue-200 transition-colors">威秀信義今天有什麼場次？</button>
+        <button onclick="setQuestion(this)" class="example-chip text-xs bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 px-3 py-1.5 rounded-full border border-gray-200 hover:border-blue-200 transition-colors">哪些電影同時有 4DX 和 IMAX 場次？</button>
       </div>
 
       <div class="mt-4 flex items-center gap-3">
@@ -108,6 +111,7 @@
   </div>
 
   <script>
+    const CHAIN_URLS = {'威秀':'https://www.vscinemas.com.tw','新光':'https://www.skcinemas.com','美麗華':'https://www.miramarcinemas.tw'};
     const HALL_TYPE_COLORS = {
       'IMAX':       'bg-purple-100 text-purple-700',
       '4DX':        'bg-orange-100 text-orange-700',
@@ -211,7 +215,8 @@
             display = cell ? '<span class="text-green-600 font-medium">✓</span>' : '<span class="text-gray-300">—</span>';
           } else if (col === 'chain') {
             const chainColors = { '威秀': 'text-blue-700 font-medium', '新光': 'text-rose-600 font-medium', '美麗華': 'text-emerald-600 font-medium' };
-            display = `<span class="${chainColors[String(cell)] || ''}">${escHtml(String(cell))}</span>`;
+            const inner = `<span class="${chainColors[String(cell)] || ''}">${escHtml(String(cell))}</span>`;
+            display = CHAIN_URLS[String(cell)] ? `<a href="${CHAIN_URLS[String(cell)]}" target="_blank" rel="noopener">${inner}</a>` : inner;
           } else {
             display = escHtml(String(cell));
           }

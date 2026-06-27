@@ -81,7 +81,7 @@ const COL_LABELS = {
   is_special_hall:'特殊廳', last_updated:'資料更新'
 };
 const DISPLAY_COLS = ['show_date','movie_name','theater_name','chain','hall_type','hall_name','show_time','language','is_special_hall'];
-const DROPDOWN_COLS = new Set(['show_date','chain','hall_type','language','is_special_hall']);
+const DROPDOWN_COLS = new Set(['show_date','chain','theater_name','hall_type','language','is_special_hall','show_time']);
 const HALL_COLORS = {
   'IMAX':'bg-purple-100 text-purple-700','4DX':'bg-orange-100 text-orange-700',
   'MX4D':'bg-orange-100 text-orange-700','Dolby':'bg-indigo-100 text-indigo-700',
@@ -90,6 +90,14 @@ const HALL_COLORS = {
   'OSIM':'bg-green-100 text-green-700','SEALY':'bg-green-100 text-green-700',
 };
 const CHAIN_COLORS = {'威秀':'text-blue-700 font-medium','新光':'text-rose-600 font-medium','美麗華':'text-emerald-600 font-medium'};
+const CHAIN_URLS = {'威秀':'https://www.vscinemas.com.tw','新光':'https://www.skcinemas.com','美麗華':'https://www.miramarcinemas.tw'};
+const TIME_RANGE_COL = 'show_time';
+const TIME_RANGES = [
+  { label: '早上 (06-12)', test: t => t >= '06:00' && t < '12:00' },
+  { label: '下午 (12-17)', test: t => t >= '12:00' && t < '17:00' },
+  { label: '晚上 (17-21)', test: t => t >= '17:00' && t < '21:00' },
+  { label: '深夜 (21-)',   test: t => t >= '21:00' || t < '06:00' },
+];
 
 // ── Filters ───────────────────────────────────────────────────────────────
 const textFilters = {};    // col → string
@@ -106,7 +114,17 @@ function rowMatches(row) {
 
     if (DROPDOWN_COLS.has(col)) {
       const sel = dropFilters[col];
-      if (sel && sel.size > 0 && !sel.has(str)) return false;
+      if (sel && sel.size > 0) {
+        if (col === TIME_RANGE_COL) {
+          const matches = [...sel].some(label => {
+            const range = TIME_RANGES.find(r => r.label === label);
+            return range && range.test(str);
+          });
+          if (!matches) return false;
+        } else if (!sel.has(str)) {
+          return false;
+        }
+      }
     } else {
       const q = (textFilters[col] || '').toLowerCase();
       if (q && !str.toLowerCase().includes(q)) return false;
@@ -145,8 +163,10 @@ function renderCell(col, val) {
     return `<span class="inline-block text-xs font-medium px-2 py-0.5 rounded-full ${HALL_COLORS[s]}">${esc(s)}</span>`;
   if (col === 'is_special_hall')
     return val === true || val === 'true' ? '<span class="text-green-600 font-medium">✓</span>' : '<span class="text-gray-300">—</span>';
-  if (col === 'chain' && CHAIN_COLORS[s])
-    return `<span class="${CHAIN_COLORS[s]}">${esc(s)}</span>`;
+  if (col === 'chain' && CHAIN_COLORS[s]) {
+    const inner = `<span class="${CHAIN_COLORS[s]}">${esc(s)}</span>`;
+    return CHAIN_URLS[s] ? `<a href="${CHAIN_URLS[s]}" target="_blank" rel="noopener">${inner}</a>` : inner;
+  }
   return esc(s);
 }
 
@@ -197,6 +217,7 @@ let activeDropCol = null;
 let pendingSelection = null;
 
 function getUniqueVals(col) {
+  if (col === TIME_RANGE_COL) return TIME_RANGES.map(r => r.label);
   const idx = colIdx(col);
   const vals = new Set();
   for (const row of ALL_ROWS) {
@@ -235,7 +256,7 @@ function renderDropdownOptions(vals, query) {
 
   container.innerHTML = filtered.map(v => {
     const label = v === '' ? '（空白）' : (v === 'true' ? '特殊廳 ✓' : v === 'false' ? '一般廳' : v);
-    const checked = pendingSelection.size === 0 || pendingSelection.has(v);
+    const checked = pendingSelection.has(v);
     return `<label class="flex items-center gap-2 px-1 py-1 rounded hover:bg-gray-50 cursor-pointer text-xs text-gray-700">
       <input type="checkbox" value="${esc(v)}" ${checked?'checked':''} class="dd-cb rounded"
         onchange="onCbChange(this)"/>
@@ -245,11 +266,6 @@ function renderDropdownOptions(vals, query) {
 }
 
 function onCbChange(cb) {
-  if (pendingSelection.size === 0) {
-    // was "all selected" state — switch to explicit selection
-    const allVals = document.getElementById('dropdownSearch')._allVals || [];
-    pendingSelection = new Set(allVals);
-  }
   if (cb.checked) pendingSelection.add(cb.value);
   else pendingSelection.delete(cb.value);
 }
