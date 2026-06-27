@@ -168,18 +168,21 @@ async def _collect_sessions(page: Page) -> dict[str, list[dict]]:
     page.on("response", on_response)
 
     # 載入電影列表，點第一個卡片進入詳細頁（觸發 CinemasID=1001 API）
-    await page.goto(f"{BASE_URL}/films", wait_until="networkidle", timeout=30_000)
-    await page.wait_for_timeout(1_000)
+    await page.goto(f"{BASE_URL}/films", wait_until="load", timeout=60_000)
+    await page.wait_for_timeout(2_000)
 
     cards = await page.query_selector_all(".skc-movie-item")
     if cards:
         await cards[0].click()
-        await page.wait_for_load_state("networkidle", timeout=20_000)
+        try:
+            await page.wait_for_load_state("networkidle", timeout=20_000)
+        except Exception:
+            await page.wait_for_load_state("load", timeout=20_000)
     else:
         await page.goto(
             f"{BASE_URL}/films/FP202605220015",
-            wait_until="networkidle",
-            timeout=30_000,
+            wait_until="load",
+            timeout=60_000,
         )
 
     await page.wait_for_timeout(2_000)
