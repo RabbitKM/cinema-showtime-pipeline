@@ -87,7 +87,7 @@ ORDER BY sessions DESC
     },
     {
         "id": "theater_schedule",
-        "description": "某間影城今天或本週的完整場次表，特定影城的排片",
+        "description": "某間特定影城的場次，例如信義威秀、天母新光、獅子林、青埔、美麗華，特定影城名稱查場次排片",
         "sql_template": """
 SELECT show_date, movie_name, hall_type, hall_name, show_time, language
 FROM `{project}.{dataset}.fact_showtimes`
