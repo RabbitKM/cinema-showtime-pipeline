@@ -29,7 +29,7 @@ ORDER BY show_date, theater_name, show_time
     },
     {
         "id": "movie_showtimes",
-        "description": "查詢特定電影的所有場次，某部電影在哪裡上映、什麼時間",
+        "description": "查詢特定電影的所有場次，某部電影在哪些院線哪些影城有上映、什麼時間播放",
         "sql_template": """
 SELECT show_date, theater_name, chain, hall_type, hall_name, show_time, language
 FROM `{project}.{dataset}.fact_showtimes`

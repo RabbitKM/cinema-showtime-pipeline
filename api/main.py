@@ -113,14 +113,14 @@ def _build_prompt(question: str, template: dict) -> str:
 
 欄位說明：
 - show_date: 場次日期（DATE，台灣時間）
-- movie_name: 電影中文名稱
+- movie_name: 電影中文名稱（搜尋時請用 LOWER(movie_name) LIKE LOWER('%關鍵字%') 模糊比對，不要精確 =）
 - theater_name: 影城名稱（搜尋時**一律使用 LIKE '%關鍵字%' 模糊比對，嚴禁用精確 = 符號**）
   威秀影城：台北信義威秀影城、台北西門威秀影城、台北京站威秀影城、台北南港 LaLaport威秀影城、MUVIE CINEMAS 台北松仁、中和環球威秀影城、新店裕隆城威秀影城、新竹巨城威秀影城、新竹大遠百威秀影城、板橋大遠百威秀影城、林口MITSUI OUTLET PARK威秀影城、桃園統領威秀影城、桃園桃知道威秀影城、台中大遠百威秀影城、台中iFG 遠雄廣場威秀影城、台南FOCUS威秀影城、台南大遠百威秀影城、高雄大遠百威秀影城
   新光影城：台北獅子林新光影城、台北天母新光影城、桃園青埔新光影城、台中中港新光影城、台南西門新光影城
   美麗華：美麗華影城
 - chain: 院線（威秀 / 新光 / 美麗華）
 - hall_type: 正規化廳型（IMAX / 4DX / MX4D / Dolby / GOLD CLASS / TITAN / MUCROWN / LUXE / OSIM / SEALY / standard）
-- hall_name: 原始廳型細節（例如 IMAX 3D、4DX 3D、GC 數位）
+- hall_name: 原始廳型細節（例如 IMAX 3D、4DX 3D、GC 數位），搜尋時用 LIKE '%關鍵字%'
 - show_time: 場次時間（STRING，格式 HH:MM）
 - language: 語言（英文 / 中文 / 日文 / 空字串）
 - is_special_hall: 是否為特殊廳（BOOL）
