@@ -147,6 +147,21 @@ ORDER BY chain, show_time
 """,
     },
     {
+        "id": "weekend_or_weekday",
+        "description": "查詢特定星期幾或週末的場次，例如下週六台北有什麼場次、週末桃園有哪些特殊廳、下週五晚上有什麼電影、這週日哪裡有播放某部電影",
+        "sql_template": """
+WITH target_dates AS (
+  SELECT
+    DATE_ADD(CURRENT_DATE('Asia/Taipei'), INTERVAL MOD(7 - EXTRACT(DAYOFWEEK FROM CURRENT_DATE('Asia/Taipei')), 7) DAY) AS next_saturday,
+    DATE_ADD(CURRENT_DATE('Asia/Taipei'), INTERVAL MOD(7 - EXTRACT(DAYOFWEEK FROM CURRENT_DATE('Asia/Taipei')), 7) + 1 DAY) AS next_sunday
+)
+SELECT show_date, theater_name, chain, hall_type, hall_name, movie_name, show_time, language
+FROM `{project}.{dataset}.fact_showtimes`, target_dates
+WHERE show_date BETWEEN next_saturday AND next_sunday
+ORDER BY show_date, theater_name, show_time
+""",
+    },
+    {
         "id": "multi_hall_movies",
         "description": "同時有多種特殊廳場次的電影，哪些電影同時有 4DX 和 IMAX，跨廳型的電影",
         "sql_template": """

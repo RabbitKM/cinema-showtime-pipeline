@@ -127,6 +127,9 @@ def _build_prompt(question: str, template: dict) -> str:
 - scraped_at: 資料抓取時間（TIMESTAMP UTC）
 
 日期函式請使用 CURRENT_DATE('Asia/Taipei') 或 CURRENT_TIMESTAMP()。
+BigQuery 不支援 % 取模運算子，請改用 MOD(value, divisor)。
+EXTRACT(DAYOFWEEK FROM date) 回傳 1=週日, 2=週一, 3=週二, 4=週三, 5=週四, 6=週五, 7=週六。
+計算到下一個特定星期幾的天數：MOD(目標DOW - EXTRACT(DAYOFWEEK FROM CURRENT_DATE('Asia/Taipei')), 7)。
 
 【參考 SQL 模板】（可以此為起點修改，不必完全照抄）
 {template['sql_template'].format(project=PROJECT_ID, dataset=DATASET_ID, movie_name='', hall_type='', theater_name='')}
