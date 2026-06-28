@@ -180,7 +180,7 @@ async def query(req: QueryRequest):
         except Exception as e:
             last_err = e
             err_str = str(e).lower()
-            if any(kw in err_str for kw in ("429", "quota", "rate", "resource exhausted")):
+            if any(kw in err_str for kw in ("429", "503", "quota", "rate", "resource exhausted", "unavailable")):
                 continue   # 換下一把 key
             raise HTTPException(status_code=500, detail=f"Gemini 生成失敗：{e}")
     if sql is None:
