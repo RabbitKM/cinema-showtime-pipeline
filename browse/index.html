@@ -164,8 +164,9 @@ function renderCell(col, val) {
   if (col === 'is_special_hall')
     return val === true || val === 'true' ? '<span class="text-green-600 font-medium">✓</span>' : '<span class="text-gray-300">—</span>';
   if (col === 'chain' && CHAIN_COLORS[s]) {
-    const inner = `<span class="${CHAIN_COLORS[s]}">${esc(s)}</span>`;
-    return CHAIN_URLS[s] ? `<a href="${CHAIN_URLS[s]}" target="_blank" rel="noopener">${inner}</a>` : inner;
+    return CHAIN_URLS[s]
+      ? `<a href="${CHAIN_URLS[s]}" target="_blank" rel="noopener" class="${CHAIN_COLORS[s]} underline underline-offset-2">${esc(s)}</a>`
+      : `<span class="${CHAIN_COLORS[s]}">${esc(s)}</span>`;
   }
   return esc(s);
 }
