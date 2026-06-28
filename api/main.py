@@ -128,6 +128,7 @@ def _build_prompt(question: str, template: dict) -> str:
 
 日期函式請使用 CURRENT_DATE('Asia/Taipei') 或 CURRENT_TIMESTAMP()。
 BigQuery 不支援 % 取模運算子，請改用 MOD(value, divisor)。
+查詢結果若涵蓋多天（例如週末、未來幾天），SELECT 必須包含 show_date 欄位，讓使用者能區分日期。
 EXTRACT(DAYOFWEEK FROM date) 回傳 1=週日, 2=週一, 3=週二, 4=週三, 5=週四, 6=週五, 7=週六。
 計算到下一個特定星期幾的天數：MOD(目標DOW - EXTRACT(DAYOFWEEK FROM CURRENT_DATE('Asia/Taipei')), 7)。
 

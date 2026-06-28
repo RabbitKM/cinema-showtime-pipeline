@@ -6,7 +6,7 @@
 SQL_TEMPLATES = [
     {
         "id": "special_hall_today",
-        "description": "今天有哪些特殊廳場次？IMAX、4DX、Dolby Cinema、Gold Class 等特殊廳今日場次",
+        "description": "今天當日有哪些特殊廳場次？IMAX、4DX、Dolby Cinema、Gold Class 等特殊廳僅限今天的場次",
         "sql_template": """
 SELECT theater_name, chain, hall_type, hall_name, movie_name, show_time, language
 FROM `{project}.{dataset}.fact_showtimes`
@@ -148,7 +148,7 @@ ORDER BY chain, show_time
     },
     {
         "id": "weekend_or_weekday",
-        "description": "查詢特定星期幾或週末的場次，例如下週六台北有什麼場次、週末桃園有哪些特殊廳、下週五晚上有什麼電影、這週日哪裡有播放某部電影",
+        "description": "查詢週末（這週六、這週日、下週六日）或特定星期幾的場次，例如週末有哪些 IMAX 4DX 特殊廳、這週六桃園台北有什麼場次、下週五晚上有什麼電影、週末哪裡有播放某部電影",
         "sql_template": """
 WITH target_dates AS (
   SELECT
