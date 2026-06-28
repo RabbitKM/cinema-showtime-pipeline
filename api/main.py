@@ -30,7 +30,7 @@ load_dotenv(os.path.join(os.path.dirname(_api_dir), ".env"))  # cinema_check/.en
 
 embed_model: SentenceTransformer = None
 template_embeddings: np.ndarray = None
-gemini_client = None
+gemini_clients: list = []   # 支援多 key 輪替，遇到 429 自動換下一把
 bq_client = None
 bq_schema_info: str = ""
 
@@ -40,7 +40,7 @@ DATASET_ID = os.getenv("BQ_DATASET_ID", "cinema_check")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global embed_model, template_embeddings, gemini_client, bq_client, bq_schema_info
+    global embed_model, template_embeddings, gemini_clients, bq_client, bq_schema_info
 
     print("載入嵌入模型中...")
     embed_model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -48,13 +48,20 @@ async def lifespan(app: FastAPI):
     template_embeddings = embed_model.encode(descriptions, normalize_embeddings=True)
     print(f"已載入 {len(SQL_TEMPLATES)} 個 SQL 模板")
 
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_api_key:
+    # 讀取所有 Gemini key（GEMINI_API_KEY, GEMINI_API_KEY_2, GEMINI_API_KEY_3...）
+    raw_keys = [os.getenv("GEMINI_API_KEY")]
+    for i in range(2, 6):
+        k = os.getenv(f"GEMINI_API_KEY_{i}")
+        if k:
+            raw_keys.append(k)
+    valid_keys = [k for k in raw_keys if k]
+    if not valid_keys:
         raise RuntimeError("GEMINI_API_KEY 未設定")
-    gemini_client = google_genai.Client(
-        api_key=gemini_api_key,
-        http_options={"api_version": "v1alpha"},
-    )
+    gemini_clients = [
+        google_genai.Client(api_key=k, http_options={"api_version": "v1alpha"})
+        for k in valid_keys
+    ]
+    print(f"Gemini clients 初始化完成：{len(gemini_clients)} 把 key")
 
     sa_rel = os.getenv("GCP_SERVICE_ACCOUNT_PATH", "service_account.json")
     # 先找 api/ 同層，再往上找 cinema_check/
@@ -160,14 +167,24 @@ async def query(req: QueryRequest):
     template = _find_best_template(req.question)
     prompt = _build_prompt(req.question, template)
 
-    try:
-        response = gemini_client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-        )
-        sql = _clean_sql(response.text)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Gemini 生成失敗：{e}")
+    sql = None
+    last_err = None
+    for client in gemini_clients:
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+            )
+            sql = _clean_sql(response.text)
+            break
+        except Exception as e:
+            last_err = e
+            err_str = str(e).lower()
+            if any(kw in err_str for kw in ("429", "quota", "rate", "resource exhausted")):
+                continue   # 換下一把 key
+            raise HTTPException(status_code=500, detail=f"Gemini 生成失敗：{e}")
+    if sql is None:
+        raise HTTPException(status_code=429, detail=f"所有 Gemini API key 均達速率限制，請稍後再試。({last_err})")
 
     try:
         result = bq_client.query(sql).result()
