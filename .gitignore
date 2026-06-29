@@ -37,6 +37,10 @@ __pycache__/
 # GCP 服務帳號金鑰
 service_account.json
 
+# 內部規劃草稿（不對外展示）
+docs/bigquery_deploy_plan.md
+docs/plan_browse_ui_improvements.md
+
 # Claude Code 本機設定
 .claude/
 
