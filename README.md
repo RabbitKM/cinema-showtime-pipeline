@@ -45,35 +45,21 @@
 ## 技術架構
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                   ETL Pipeline                       │
-│                                                      │
-│  Extract (scrapers/)  →  Transform  →  Load          │
-│  ├── vscinemas.py         transform.py  load.py      │
-│  ├── skcinemas.py         正規化廳型    BigQuery      │
-│  └── miramar.py           正規化語言    WRITE_TRUNCATE│
-└─────────────────────────────────────────────────────┘
+ETL Pipeline
+├── Extract    scrapers/vscinemas.py + skcinemas.py + miramar.py
+├── Transform  transform.py  (廳型、語言、日期正規化)
+└── Load       load.py  -->  BigQuery WRITE_TRUNCATE
 
-┌─────────────────────────────────────────────────────┐
-│                  混合部署架構                         │
-│                                                      │
-│  Cloud Run Job (cinema-etl)                          │
-│    威秀 + 美麗華，每日 10:00 / 22:00 CST             │
-│                                                      │
-│  Windows 工作排程器（本機）                           │
-│    三家全跑（含新光），每日 10:30 / 22:30 CST         │
-│    30 分鐘後以 WRITE_TRUNCATE 覆蓋，確保資料完整      │
-└─────────────────────────────────────────────────────┘
+混合部署架構
+├── Cloud Run Job (cinema-etl)
+│     威秀 + 美麗華，每日 10:00 / 22:00 CST
+└── Windows 工作排程器 (本機)
+      三家全跑含新光，每日 10:30 / 22:30 CST
+      30 分鐘後以 WRITE_TRUNCATE 覆蓋，確保資料完整
 
-┌─────────────────────────────────────────────────────┐
-│               兩個 Cloud Run Services                │
-│                                                      │
-│  cinema-api (FastAPI)       cinema-browse (FastAPI)  │
-│  NL → SentenceTransformer   全量資料 API             │
-│  → 最近 SQL 模板            client-side 篩選         │
-│  → Gemini 生成 SQL                                   │
-│  → BigQuery 執行                                     │
-└─────────────────────────────────────────────────────┘
+Cloud Run Services
+├── cinema-api    (FastAPI)  NL --> SentenceTransformer --> Gemini SQL --> BigQuery
+└── cinema-browse (FastAPI)  全量資料 API，client-side 篩選
 ```
 
 **BigQuery Table**：`cinema-showtime-pipeline.cinema_check.fact_showtimes`
