@@ -4,6 +4,8 @@
 
 **起源**：想找週末哪間影城有特殊廳（IMAX / 4DX）播放特定電影，每次都要逐一開各院線網站比較，因此自己動手做了這個工具。
 
+![專案概覽](docs/assets/slide-overview.png)
+
 ---
 
 ## Live Demo
@@ -64,6 +66,8 @@ Cloud Run Services
 
 **BigQuery Table**：`cinema-showtime-pipeline.cinema_check.fact_showtimes`
 **資料規模**：每次爬取約 12,000–13,500 筆，每日兩次覆蓋
+
+![資料品質挑戰與 AI 查詢架構](docs/assets/slide-architecture.png)
 
 ---
 
