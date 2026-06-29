@@ -37,6 +37,9 @@ __pycache__/
 # GCP 服務帳號金鑰
 service_account.json
 
+# Claude Code 本機設定
+.claude/
+
 # 編輯器
 .vscode/
 .idea/
