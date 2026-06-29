@@ -14,6 +14,7 @@ _dev/
 # Debug 過程產生的臨時檔案
 tmp_*.py
 *.png
+!docs/assets/*.png
 *.html
 !api/index.html
 !browse/index.html
