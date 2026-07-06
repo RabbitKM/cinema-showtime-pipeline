@@ -1,4 +1,4 @@
-# 台灣影城特殊廳場次 ETL 分析平台
+# 台灣影城特殊廳場次查詢平台 (ETL+AI實作)
 
 自動爬取台灣三大院線（威秀、新光、美麗華）電影場次，存入 BigQuery，並提供兩個分析介面。
 
@@ -112,14 +112,15 @@ Gemini 自行猜測影城名稱格式，生成 `theater_name = '威秀影城(信
 
 | 欄位 | 型別 | 說明 |
 |------|------|------|
-| `show_date` | STRING | 場次日期（YYYY-MM-DD） |
+| `show_date` | DATE | 場次日期（YYYY-MM-DD） |
 | `movie_name` | STRING | 電影名稱 |
+| `theater_id` | STRING | 影城唯一 ID（如 `vscinemas_TP`） |
 | `theater_name` | STRING | 影城名稱（31 間） |
 | `chain` | STRING | 院線（威秀 / 新光 / 美麗華） |
 | `hall_type` | STRING | 正規化廳型（IMAX / 4DX / Dolby 等） |
 | `hall_name` | STRING | 原始廳型細節 |
 | `show_time` | STRING | 場次時間（HH:MM） |
-| `language` | STRING | 語言（英文 / 中文 / 日文） |
+| `language` | STRING | 語言（英文 / 中文 / 日文 / 空字串） |
 | `is_special_hall` | BOOL | 是否為特殊廳 |
 | `scraped_at` | TIMESTAMP | 爬取時間（UTC） |
 

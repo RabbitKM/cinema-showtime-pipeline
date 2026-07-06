@@ -1,4 +1,4 @@
-# 台灣影城特殊廳場次 ETL 分析平台
+# 台灣影城特殊廳場次查詢平台 (ETL+AI實作)
 
 > 面試用專案說明文件。涵蓋架構設計、技術選型、挑戰與解法、live demo URL。
 
@@ -83,7 +83,7 @@
         │
         ▼
 SentenceTransformer (all-MiniLM-L6-v2)
-  → 語意相似度搜尋 11 個 SQL 模板
+  → 語意相似度搜尋 13 個 SQL 模板
   → 找出最相近的模板（cosine similarity）
         │
         ▼
@@ -211,7 +211,7 @@ cinema_check/
 │   └── miramar.py          # 美麗華（JS 注入提取資料）
 ├── api/
 │   ├── main.py             # FastAPI（NL→SQL→BQ）
-│   ├── templates.py        # 11 個 SQL 模板
+│   ├── templates.py        # 13 個 SQL 模板
 │   ├── index.html          # AI 查詢前端
 │   ├── Dockerfile
 │   └── requirements.txt
