@@ -144,13 +144,10 @@ cinema_check/
 │   ├── templates.py        # 13 個 SQL 模板
 │   ├── index.html          # AI 查詢前端
 │   └── Dockerfile
-├── browse/
-│   ├── main.py             # FastAPI（全量資料 API）
-│   ├── index.html          # 試算表篩選前端
-│   └── Dockerfile
-└── docs/
-    ├── transform_log.md    # ETL 修正紀錄（edge cases）
-    └── PROJECT_BRIEF.md    # 專案說明（面試用）
+└── browse/
+    ├── main.py             # FastAPI（全量資料 API）
+    ├── index.html          # 試算表篩選前端
+    └── Dockerfile
 ```
 
 ---
