@@ -87,8 +87,8 @@ Cloud Run Services
 ## 關鍵技術挑戰
 
 ### 1. skcinemas（新光）Cloudflare IP 封鎖
-GCP Cloud Run 出口 IP 被 Cloudflare 封鎖，timeout 無解。
-**解法**：混合架構——Cloud Run 跑威秀+美麗華，本機 Windows 排程器跑全部三家，30 分鐘後以 `WRITE_TRUNCATE` 覆蓋，確保 BigQuery 有完整資料。
+GCP Cloud Run 出口 IP 被 Cloudflare 封鎖，timeout 無解；實測 Cloud Run 多地區、Compute Engine 專屬 IP、GitHub Actions 皆同樣被擋，判定是新光對「資料中心／雲端」網段的整段封鎖，非單一平台問題。
+**解法**：混合架構——Cloud Run 跑威秀+美麗華，本機 Windows 排程器跑全部三家（執行前自動停用本機 VPN 連線，確保新光走真實 IP），30 分鐘後以 `WRITE_TRUNCATE` 覆蓋，確保 BigQuery 有完整資料。
 
 ### 2. 三院線異質資料正規化
 各院線日期格式、廳型、語言標記完全不同（`07月08日 星期三` vs `2026/06/26` vs CSS class）。
