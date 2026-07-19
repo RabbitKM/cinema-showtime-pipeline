@@ -4,7 +4,8 @@
 #
 # 新光（skcinemas）若透過 VPN 連線會被目標網站擋下，
 # 執行前先停用本機 VPN client 服務，確保新光用真實 IP 抓取。
-# 執行後不會自動重新連線；若不需要這個行為可自行註解掉下面這段。
+# 執行完畢後會重新啟用 VPN client 服務（僅讓 VPN 管理程式恢復可用，
+# 不會自動連回原本的網域，需自行手動連線）；若不需要這個行為可自行註解掉相關段落。
 
 $ProjectRoot = "$PSScriptRoot"
 $LogFile     = "$ProjectRoot\logs\etl_local.log"
@@ -33,3 +34,11 @@ Set-Location $ProjectRoot
 
 $exitCode = $LASTEXITCODE
 Add-Content $LogFile "Exit code: $exitCode"
+
+$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+try {
+    Start-Service -Name "SEVPNCLIENT" -ErrorAction Stop
+    Add-Content $LogFile "[$timestamp] SoftEther VPN client 已重新啟用"
+} catch {
+    Add-Content $LogFile "[$timestamp] WARNING: 重新啟用 SoftEther VPN client 失敗: $_"
+}
